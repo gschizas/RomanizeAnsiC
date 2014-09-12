@@ -2,17 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-
-#ifdef WINDOWS
 #include <Windows.h>
-#else
-#define SetConsoleOutputCP(cp) {printf('code page: %s', cp);}
-#endif
 
 const char *upperChars = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΆΈΉΊΌΎΏΪΫΪΫΣABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const char *lowerChars = "αβγδεζηθικλμνξοπρστυφχψωάέήίόύώϊϋΐΰςabcdefghijklmnopqrstuvwxyz";
 const char *simple_translation_greek = "άβδέζήιίϊΐκλνξόπρσςτυύϋΰφωώ";
-const char *simple_translation_latin = "avdeziiiiiklnxoprsstyyyyfoo";
+char const **simple_translation_latin = "avdeziiiiiklnxoprsstyyyyfoo";
 const char *digraph_translation_greek = "θχψ";
 const char *digraph_translation_latin = "thchps";
 const char *digraph_ypsilon_greek = "αεη";
@@ -20,10 +15,16 @@ const char *digraph_ypsilon_latin = "aei";
 const char *digraph_ypsilon_beta = "βγδζλμνραάεέηήιίϊΐοόυύϋΰωώ";
 const char *digraph_ypsilon_phi = "θκξπστφχψ";
 
-#ifndef WINDOWS
+#ifndef _MSC_VER
 
 #define strcat_s(src, len, dst) strncat(src, dst, len)
 #define strcpy_s(src, len, dst) strncpy(src, dst, len)
+
+#endif
+
+#ifndef _WINDOWS_
+
+#define SetConsoleOutputCP(cp) printf("Set code page to : %s", cp);
 
 #endif
 
@@ -59,15 +60,14 @@ bool isWhitespace(char third_letter) {
 }
 
 char *romanize(char *greekText) {
-
-    int result_length = (int) (strlen(greekText) * 3 + 1);
+    int greekTextLength = (int) strlen(greekText);
+    int result_length = greekTextLength * 3 + 1;
     char *result = malloc((size_t) result_length);
     memset(result, 0, (size_t) result_length);
     char letter, prev_letter, next_letter, third_letter;
     char newLetterBuff[4];
     char *newLetter = newLetterBuff;
     int is_upper, is_upper2;
-    int greekTextLength = (int) strlen(greekText);
 
     int cursor = 0;
     while (cursor < greekTextLength) {
@@ -133,6 +133,7 @@ char *romanize(char *greekText) {
             strcpy_s(newLetter, 4, (char *)(letter + '\0'));
         }
 
+        /*
         char c1 = newLetterBuff[0];
         c1 = is_upper ? toUpper(c1) : toLower(c1);
         char c2 = newLetterBuff[1];
@@ -143,6 +144,7 @@ char *romanize(char *greekText) {
         newLetterBuff[0] = c1;
         newLetterBuff[1] = c2;
         newLetterBuff[2] = c3;
+        */
 
         strcat_s(result, greekTextLength, newLetter);
         cursor++;
@@ -152,7 +154,7 @@ char *romanize(char *greekText) {
 
 
 int main() {
-    // SetConsoleOutputCP(1253);
+    SetConsoleOutputCP(1253);
 
     char resultUpper1 = toUpper((char) 'γ');
     printf("%c", resultUpper1);
@@ -172,14 +174,11 @@ int main() {
     char resultLower3 = toLower('G');
     printf("%c", resultLower3);
 
-    printf("\n");
+    printf("\r\n");
 
-    return 0;
-
-    char *resultFinal = romanize("Γειά σου κόσμε!\n");
+    char* resultFinal = "Γειά σου κόσμε!\n"; //romanize("Γειά σου κόσμε!\n");
     printf("%s", resultFinal);
-    free(resultFinal);
-    resultFinal = NULL;
+    // free(resultFinal);
 
     return 0;
 }
