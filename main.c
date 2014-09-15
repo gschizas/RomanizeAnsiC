@@ -2,29 +2,30 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 #ifdef __unix__ 
 # include <unistd.h>
 #elif defined _WIN32
 # include <windows.h>
 #endif
 
-const char *upperChars = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΆΈΉΊΌΎΏΪΫΪΫΣABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const char *lowerChars = "αβγδεζηθικλμνξοπρστυφχψωάέήίόύώϊϋΐΰςabcdefghijklmnopqrstuvwxyz";
-const char *simple_translation_greek = "άβδέζήιίϊΐκλνξόπρσςτυύϋΰφωώ";
-const char *simple_translation_latin = "avdeziiiiiklnxoprsstyyyyfoo";
-const char *digraph_translation_greek = "θχψ";
-const char *digraph_translation_latin = "thchps";
-const char *digraph_ypsilon_greek = "αεη";
-const char *digraph_ypsilon_latin = "aei";
-const char *digraph_ypsilon_beta = "βγδζλμνραάεέηήιίϊΐοόυύϋΰωώ";
-const char *digraph_ypsilon_phi = "θκξπστφχψ";
+const unsigned char *upperChars = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΆΈΉΊΌΎΏΪΫΪΫΣABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const unsigned char *lowerChars = "αβγδεζηθικλμνξοπρστυφχψωάέήίόύώϊϋΐΰςabcdefghijklmnopqrstuvwxyz";
+const unsigned char *simple_translation_greek = "άβδέζήιίϊΐκλνξόπρσςτυύϋΰφωώ";
+const unsigned char *simple_translation_latin = "avdeziiiiiklnxoprsstyyyyfoo";
+const unsigned char *digraph_translation_greek = "θχψ";
+const unsigned char *digraph_translation_latin = "thchps";
+const unsigned char *digraph_ypsilon_greek = "αεη";
+const unsigned char *digraph_ypsilon_latin = "aei";
+const unsigned char *digraph_ypsilon_beta = "βγδζλμνραάεέηήιίϊΐοόυύϋΰωώ";
+const unsigned char *digraph_ypsilon_phi = "θκξπστφχψ";
 
 #ifndef _MSC_VER
 
 #define strcat_s(src, len, dst) strncat(src, dst, len)
 #define strcpy_s(src, len, dst) strncpy(src, dst, len)
 
-#endif
+#endif q
 
 #ifndef _WINDOWS_
 
@@ -33,39 +34,40 @@ const char *digraph_ypsilon_phi = "θκξπστφχψ";
 #endif
 
 
-int strpos(char *haystack, char needle) {
-    char *p = strchr(haystack, needle);
+int strpos(unsigned char *haystack, unsigned char needle) {
+    unsigned char *p = strchr(haystack, needle);
     if (p)
         return (int) (p - haystack);
     return -1;
 }
 
-bool charIn(char *haystack, char needle) {
+bool charIn(unsigned char *haystack, unsigned char needle) {
     int idx = strpos(haystack, needle);
     return idx >= 0;
 }
 
-char toUpper(char inp) {
-    int idx = strpos((char *) lowerChars, inp);
+unsigned char toUpper(unsigned char inp) {
+    int idx = strpos(lowerChars, inp);
     if (idx >= 0) {
         return upperChars[idx];
     } else return inp;
 }
 
-char toLower(char inp) {
-    int idx = strpos((char *) upperChars, inp);
+unsigned char toLower(unsigned char inp) {
+    int idx = strpos(upperChars, inp);
     if (idx >= 0) {
         return lowerChars[idx];
     } else return inp;
 }
 
-bool isWhitespace(char third_letter) {
+bool isWhitespace(unsigned char third_letter) {
     return (third_letter <= 32 || third_letter == 160);
 }
 
-char *substring(char *string, int position, int length)
+unsigned char *substring(unsigned char *string, int position, int length)
 {
-    char *pointer;
+    unsigned char *pointer;
+    unsigned char *source = string;
     int c;
 
     pointer = malloc(length + 1);
@@ -76,13 +78,13 @@ char *substring(char *string, int position, int length)
         exit(EXIT_FAILURE);
     }
 
-    for (c = 0; c < position - 1; c++)
-        string++;
+    for (c = 0; c < position; c++)
+        source++;
 
     for (c = 0; c < length; c++)
     {
-        *(pointer + c) = *string;
-        string++;
+        *(pointer + c) = *source;
+        source++;
     }
 
     *(pointer + c) = '\0';
@@ -90,23 +92,26 @@ char *substring(char *string, int position, int length)
     return pointer;
 }
 
-char *romanize(char *greekText) {
-    int greekTextLength = (int) strlen(greekText);
-    int result_length = greekTextLength * 3 + 1;
-    char *result = malloc((size_t) result_length);
-    memset(result, 0, (size_t) result_length);
-    char letter, prev_letter, next_letter, third_letter;
-    char newLetterBuff[4];
-    char *newLetter = newLetterBuff;
-    int is_upper, is_upper2;
+unsigned char *romanize(unsigned char *greekText) {
+#ifdef _DEBUG
+    printf("%s = ", greekText);
+#endif
+    int greekLength = (int) strlen(greekText);
+    int latinLength = greekLength * 3 + 1;
+    unsigned char *result = malloc((size_t)latinLength);
+    memset(result, 0, (size_t)latinLength);
+    unsigned char letter, prev_letter, next_letter, third_letter;
+    unsigned char *newLetter = malloc(4);
+    bool is_upper, is_upper2;
 
     int cursor = 0;
-    while (cursor < greekTextLength) {
+    while (cursor < greekLength) {
+        memset(newLetter, 0, (size_t)4);
         letter = greekText[cursor];
 
         prev_letter = (char) ((cursor > 0) ? greekText[cursor - 1] : '\0');
-        next_letter = (char) ((cursor < greekTextLength - 1) ? greekText[cursor + 1] : '\0');
-        third_letter = (char) ((cursor < greekTextLength - 2) ? greekText[cursor + 2] : '\0');
+        next_letter = (char)((cursor < greekLength - 1) ? greekText[cursor + 1] : '\0');
+        third_letter = (char)((cursor < greekLength - 2) ? greekText[cursor + 2] : '\0');
 
         is_upper = toUpper(letter) == letter;
         is_upper2 = toUpper(next_letter) == next_letter;
@@ -116,70 +121,83 @@ char *romanize(char *greekText) {
         next_letter = toLower(next_letter);
         third_letter = toLower(third_letter);
 
-        printf("%c", letter);
-        if (charIn((char *) simple_translation_greek, letter)) {
-            strcpy_s(newLetter, 4, substring(simple_translation_latin, strpos((char *)simple_translation_greek, letter), 1));
-        } else if (charIn((char *) digraph_translation_greek, letter)) {
+        if (charIn(simple_translation_greek, letter)) {
+            int letterPosition = strpos(simple_translation_greek, letter);
+            strcpy_s(newLetter, 4, substring(simple_translation_latin, letterPosition, 1));
+        } else if (charIn(digraph_translation_greek, letter)) {
             int diphthong_index = strpos(digraph_translation_greek, letter);
             strcpy_s(newLetter, 4, substring(digraph_translation_latin, diphthong_index * 2, 2));
-        } else if (charIn((char *) digraph_ypsilon_greek, letter)) {
-            int ypsilonPosition = strpos((char *) digraph_ypsilon_greek, letter);
-            strcpy_s(newLetter, 4, substring(digraph_ypsilon_latin, ypsilonPosition, 1));
-            if (next_letter == 'υ' || next_letter == 'ύ') {
-                if (charIn((char *) digraph_ypsilon_beta, third_letter)) {
+        } else if (charIn(digraph_ypsilon_greek, letter)) {
+            int ypsilonPosition = strpos(digraph_ypsilon_greek, letter);
+            unsigned char *newLetter2 = substring(digraph_ypsilon_latin, ypsilonPosition, 1);
+            strcpy_s(newLetter, 4, newLetter2);
+            free(newLetter2);
+            if (next_letter == (unsigned char)'υ' || next_letter == (unsigned char)'ύ') {
+                if (charIn(digraph_ypsilon_beta, third_letter)) {
                     strcat_s(newLetter, 4, "v");
                     cursor++;
-                } else if (charIn((char *) digraph_ypsilon_phi, third_letter)) {
+                } else if (charIn(digraph_ypsilon_phi, third_letter)) {
                     strcat_s(newLetter, 4, "f");
                     cursor++;
                 }
             }
-        } else if (letter == 'γ') {
-            if (next_letter == 'γ') {
+        } else if (letter == (unsigned char)'γ') {
+            if (next_letter == (unsigned char)'γ') {
                 strcpy_s(newLetter, 4, "ng");
                 cursor++;
-            } else if (next_letter == 'ξ') {
+            } else if (next_letter == (unsigned char)'ξ') {
                 strcpy_s(newLetter, 4, "nx");
                 cursor++;
-            } else if (next_letter == 'χ') {
+            } else if (next_letter == (unsigned char)'χ') {
                 strcpy_s(newLetter, 4, "nch");
                 cursor++;
             } else {
                 strcpy_s(newLetter, 4, "g");
             }
-        } else if (letter == 'μ') {
-            if (next_letter == 'π') {
+        } else if (letter == (unsigned char)'μ') {
+            if (next_letter == (unsigned char)'π') {
                 strcpy_s(newLetter, 4, isWhitespace(prev_letter) || isWhitespace(third_letter) ? "b" : "mp");
                 cursor++;
             } else {
                 strcpy_s(newLetter, 4, "m");
             }
-        } else if (letter == 'ο') {
+        } else if (letter == (unsigned char)'ο') {
             strcpy_s(newLetter, 4, "o");
-            if (next_letter == 'υ' || next_letter == 'ύ') {
+            if (next_letter == (unsigned char)'υ' || next_letter == (unsigned char)'ύ') {
                 strcat_s(newLetter, 4, "u");
                 cursor++;
             }
         } else {
-            strcat_s(newLetter, 4, letter);
+            char letterStringBuff[] = { letter, '\0' };
+            char *letterString = letterStringBuff;
+            strcpy_s(newLetter, 4, letterString); //letter
         }
 
-        /*
-        char c1 = newLetterBuff[0];
-        c1 = is_upper ? toUpper(c1) : toLower(c1);
-        char c2 = newLetterBuff[1];
-        c2 = is_upper ? toUpper(c2) : toLower(c2);
-        char c3 = newLetterBuff[2];
-        c3 = is_upper ? toUpper(c3) : toLower(c3);
+        // fix case
+        if (is_upper) {
+            char c1 = newLetter[0];
+            char c2 = newLetter[1];
+            char c3 = newLetter[2];
 
-        newLetterBuff[0] = c1;
-        newLetterBuff[1] = c2;
-        newLetterBuff[2] = c3;
-        */
+            c1 = toUpper(c1);
 
-        strcat_s(result, greekTextLength, newLetter);
+            if (is_upper2) {
+                c2 = toUpper(c2);
+                c3 = toUpper(c3);
+            }
+
+            char fixedCaseBuff[] = { c1, c2, c3, '\0' };
+            char *fixedCaseString = fixedCaseBuff;
+            strcpy_s(newLetter, 4, fixedCaseString);
+        }
+
+        strcat_s(result, latinLength, newLetter);
         cursor++;
     }
+    free(newLetter);
+#ifdef _DEBUG
+    printf("%s\n", result);
+#endif
     return result;
 }
 
@@ -189,28 +207,42 @@ int main() {
     SetConsoleOutputCP(1253);
 #endif
 
-    char resultUpper1 = toUpper((char) 'γ');
-    printf("%c", resultUpper1);
+    //printf("%c", toUpper('γ'));
+    //printf("%c", toUpper('Γ'));
+    //printf("%c", toUpper('g'));
+    //printf("%c", toLower('Γ'));
+    //printf("%c", toLower('γ'));
+    //printf("%c", toLower('G'));
+    //printf("%c", toLower('υ'));
 
-    char resultUpper2 = toUpper((char) 'Γ');
-    printf("%c", resultUpper2);
+    //printf("\r\n");
+    //printf(substring("abcd", 0, 1));
+    //printf(substring("abcd", 1, 1));
+    //printf(substring("abcd", 2, 1));
+    //printf(substring("abcd", 3, 1));
+    //printf("\r\n");
+    //printf(substring("abcd", 2, 2));
 
-    char resultUpper3 = toUpper('g');
-    printf("%c", resultUpper3);
+    //printf("\r\n");
+    //printf("%d", strpos("αβγ", 'α'));
+    //printf("\r\n");
 
-    char resultLower1 = toLower((char) 'Γ');
-    printf("%c", resultLower1);
+    //// printf("%s", romanize("κόσμε!\n"));
+    //printf("%s", romanize("Γειά σου κόσμε!\n"));
 
-    char resultLower2 = toLower((char) 'γ');
-    printf("%c", resultLower2);
-
-    char resultLower3 = toLower('G');
-    printf("%c", resultLower3);
-
-    printf("\r\n");
-
-    char* resultFinal = romanize("Γειά σου κόσμε!\n");
-    printf("%s", resultFinal);
+    assert(strcmp(romanize("Γειά σου κόσμε!"), "Geia sou kosme!") == 0);
+    assert(strcmp(romanize("Γιώργος Σχίζας"), "Giorgos Schizas") == 0);
+    assert(strcmp(romanize("Θανάσης ΘΑΝΑΣΗΣ θΑνάσης ΘΑνάσης"), "Thanasis THANASIS thAnasis THAnasis") == 0);
+    assert(strcmp(romanize("Αντώνης Ψαράς με ψάρια"), "Antonis Psaras me psaria") == 0);
+    assert(strcmp(romanize("Αυγά αύριο παύση"), "Avga avrio pafsi") == 0);
+    assert(strcmp(romanize("Άγγελος αρχάγγελος"), "Angelos archangelos") == 0);
+    assert(strcmp(romanize("Ξάδελφος εξ αγχιστείας"), "Xadelfos ex anchisteias") == 0);
+    assert(strcmp(romanize("Ακούμπα κάτω τα μπαούλα Γιακούμπ"), "Akoumpa kato ta baoula Giakoub") == 0);
+    assert(strcmp(romanize("Ζεύξη Ρίου-Αντιρρίου"), "Zefxi Riou-Antirriou") == 0);
+    assert(strcmp(romanize("μεταγραφή"), "metagrafi") == 0);
+    assert(strcmp(romanize("Ούτε το αγγούρι ούτε η αγκινάρα γράφονται με γξ"), "Oute to angouri oute i agkinara grafontai me nx") == 0);
+    assert(strcmp(romanize("ΟΥΡΑΝΟΣ Ουρανός ουρανός οϋρανός"), "OURANOS Ouranos ouranos oyranos") == 0);
+    assert(strcmp(romanize("Έχω ελέγξει το 100% της μεθόδου"), "Echo elenxei to 100% tis methodou") == 0);
     // free(resultFinal);
 
     return 0;
